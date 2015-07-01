@@ -7,4 +7,27 @@
 <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_detail">DetailActivity</string>
+    <string name="change_location">Change Location</string>
+    <string name="location_pref_key">PREF_LOCATION</string>
+    <string name="location_pref_summary">This is used to change the location</string>
+    <string name="units_pref">pref_temp_units</string>
+    <string name="change_units">Change Units</string>
+    <string name="select_units">Select Units</string>
+
+    <string-array name="units_array">
+
+        <item>C</item>
+        <item>F</item>
+    </string-array>
+
+    <!-- Date label when displaying today's weather forecast [CHAR LIMIT=20] -->
+    <string name="today">Today</string>
+
+    <!-- Date label when displaying tomorrow's weather forecast [CHAR LIMIT=20] -->
+    <string name="tomorrow">Tomorrow</string>
+
+    <!-- Date format for displaying day of week and date (i.e. Mon Jun 1) [CHAR LIMIT=20] -->
+    <string name="format_full_friendly_date"> %1$s, %2$s</string>
+
 </resources>

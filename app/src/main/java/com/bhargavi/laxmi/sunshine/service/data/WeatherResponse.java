@@ -29,8 +29,8 @@ public class WeatherResponse {
             return temp;
         }
 
-        public Weather[] getWeather() {
-            return weather;
+        public Weather getWeather() {
+            return weather[0];
         }
 
         public static class Temperature {
