@@ -3,10 +3,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.bhargavi.laxmi.sunshine.MainActivity">
 
+
+    <item
+        android:id="@+id/action_settings"
+        android:title="Settings"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_map"
+        android:title="Locate"
+        app:showAsAction="never" />
+
     <item
         android:id="@+id/action_refresh"
         android:title="Refresh"
-        app:showAsAction="always" />
+        app:showAsAction="never" />
+
 
 
 </menu>

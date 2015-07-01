@@ -1,6 +1,12 @@
 package com.bhargavi.laxmi.sunshine;
 
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,8 +16,10 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import com.bhargavi.laxmi.sunshine.service.ServiceManager;
 import com.bhargavi.laxmi.sunshine.service.data.WeatherResponse;
@@ -27,8 +35,11 @@ import java.util.Date;
  * A placeholder fragment containing a simple view.
  */
 public class ForecastFragment extends Fragment {
-    private ArrayAdapter<String> weatherAdapter ;
+    private WeatherAdapter weatherAdapter ;
     private ListView weatherListView ;
+    private String userLocation;
+    private  String unit ;
+
 
     public ForecastFragment() {
     }
@@ -38,22 +49,36 @@ public class ForecastFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_main, container, false);
-       /* ArrayList<String> weather = new ArrayList<String>();
-        weather.add("Today - sunny - 88/63");
-        weather.add("Tomorrow -cloudy- 60/74");
-        weather.add("Wednesday -foggy- 74/63");
-        weather.add("Thursday -sunny- 88/63");
-        weather.add("Friday -sunny- 88/63");
-        weather.add("Saturday -cloudy- 70/66");
-        weather.add("Sunday -cloudy- 74/63");
-        weather.add("Monday -sunny- 88/63");*/
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        unit = sharedPref.getString(getString(R.string.units_pref), "C");
 
-         weatherListView = (ListView) view.findViewById(R.id.listview_forecast);
+        userLocation = sharedPref.getString(getString(R.string.location_pref_key), "95051");
 
-        FetchWeatherTask task = new FetchWeatherTask();
-        task.execute();
+
+
+        weatherListView = (ListView) view.findViewById(R.id.listview_forecast);
+        weatherListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                /*String forecast = weatherAdapter.getItem(position);
+                Intent intent = new Intent(getActivity(), DetailActivity.class);
+                intent.putExtra("forecast", forecast);
+                startActivity(intent);*/
+            }
+        });
 
         return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
+    }
+
+    private void updateWeather(){
+        FetchWeatherTask task = new FetchWeatherTask();
+        task.execute();
     }
 
     @Override
@@ -79,21 +104,53 @@ public class ForecastFragment extends Fragment {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_refresh) {
+            updateWeather();
             return true;
         }
+        else if (id == R.id.action_settings){
+
+            Intent intent = new Intent(getActivity(),SettingsActivity.class);
+            startActivity(intent);
+
+            return true;
+
+        }
+        else if (id == R.id.action_map){
+            Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + userLocation);
+            Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+            if (isPackageInstalled("com.google.android.apps.maps",getActivity())) {
+
+                mapIntent.setPackage("com.google.android.apps.maps");
+
+            }
+            startActivity(mapIntent);
+        }
+
+
 
         return super.onOptionsItemSelected(item);
     }
 
-    private class FetchWeatherTask extends AsyncTask<Void,Void,ArrayList<String>> {
+    private boolean isPackageInstalled(String packagename, Context context) {
+        PackageManager pm = context.getPackageManager();
+        try {
+            pm.getPackageInfo(packagename, PackageManager.GET_ACTIVITIES);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private class FetchWeatherTask extends AsyncTask<Void,Void,WeatherResponse.WeatherData[]> {
 
          @Override
-         protected ArrayList<String> doInBackground(Void... params) {
+         protected WeatherResponse.WeatherData[] doInBackground(Void... params) {
+
              try {
-                 WeatherResponse weatherResponse = ServiceManager.getWeatherResponse("95051");
-                 ArrayList<String> response = new ArrayList<String>();
+
+                 WeatherResponse weatherResponse = ServiceManager.getWeatherResponse(userLocation);
                  WeatherResponse.WeatherData[] weatherDataList = weatherResponse.getList();
-                 for (WeatherResponse.WeatherData data : weatherDataList)
+                /* for (WeatherResponse.WeatherData data : weatherDataList)
                  {
                      Date dt = new Date(data.getDt() * 1000);
 
@@ -105,11 +162,20 @@ public class ForecastFragment extends Fragment {
 
                      WeatherResponse.WeatherData.Temperature temp = data.getTemp();
 
-                     String result = sdf.format(dt) + " - " + weatherInfo + " - " + temp.getMax() + "/" + temp.getMin();
-                     response.add(result);
-                 }
+                     double max = temp.getMax();
+                     double min =  temp.getMin();
 
-                 return response;
+                     if (unit.equals("F")){
+                         max = max * (9/5) + 32;
+                         min = min * (9/5) + 32;
+
+                     }
+
+                     String result = sdf.format(dt) + " - " + weatherInfo + " - " + max + "/" + min ;
+                     response.add(result);
+                 }*/
+
+                 return weatherDataList;
              } catch (IOException e) {
                  e.printStackTrace();
              }
@@ -119,12 +185,11 @@ public class ForecastFragment extends Fragment {
          }
 
          @Override
-         protected void onPostExecute(ArrayList<String> weatherResponse) {
+         protected void onPostExecute(WeatherResponse.WeatherData[] weatherResponse) {
              super.onPostExecute(weatherResponse);
              Log.d(getClass().getSimpleName(), weatherResponse.toString());
 
-             weatherAdapter = new ArrayAdapter<String>(getActivity(),R.layout.list_item_forecast,R.id.list_item_forecast_textview,weatherResponse);
-
+             weatherAdapter = new WeatherAdapter(getActivity(),weatherResponse,unit);
              weatherListView.setAdapter(weatherAdapter);
 
          }
