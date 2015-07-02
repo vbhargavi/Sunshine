@@ -60,10 +60,10 @@ public class ForecastFragment extends Fragment {
         weatherListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                /*String forecast = weatherAdapter.getItem(position);
+                WeatherResponse.WeatherData weatherData = (WeatherResponse.WeatherData) weatherAdapter.getItem(position);
                 Intent intent = new Intent(getActivity(), DetailActivity.class);
-                intent.putExtra("forecast", forecast);
-                startActivity(intent);*/
+                intent.putExtra("forecast", weatherData);
+                startActivity(intent);
             }
         });
 
@@ -150,30 +150,6 @@ public class ForecastFragment extends Fragment {
 
                  WeatherResponse weatherResponse = ServiceManager.getWeatherResponse(userLocation);
                  WeatherResponse.WeatherData[] weatherDataList = weatherResponse.getList();
-                /* for (WeatherResponse.WeatherData data : weatherDataList)
-                 {
-                     Date dt = new Date(data.getDt() * 1000);
-
-                     SimpleDateFormat sdf = new SimpleDateFormat("E, MMM d");
-
-
-                     WeatherResponse.WeatherData.Weather weather =  data.getWeather()[0];
-                     String weatherInfo = weather.getMain();
-
-                     WeatherResponse.WeatherData.Temperature temp = data.getTemp();
-
-                     double max = temp.getMax();
-                     double min =  temp.getMin();
-
-                     if (unit.equals("F")){
-                         max = max * (9/5) + 32;
-                         min = min * (9/5) + 32;
-
-                     }
-
-                     String result = sdf.format(dt) + " - " + weatherInfo + " - " + max + "/" + min ;
-                     response.add(result);
-                 }*/
 
                  return weatherDataList;
              } catch (IOException e) {
