@@ -1,5 +1,6 @@
-<resources>
-    <string name="app_name">Sunshine</string>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+
+<string name="app_name">Sunshine</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
@@ -29,5 +30,7 @@
 
     <!-- Date format for displaying day of week and date (i.e. Mon Jun 1) [CHAR LIMIT=20] -->
     <string name="format_full_friendly_date"> %1$s, %2$s</string>
+    <!-- Temperature formats in degrees [CHAR LIMIT=NONE] -->
+    <string name="format_temperature"><xliff:g id="temp">%1.0f</xliff:g>\u00B0</string>
 
 </resources>

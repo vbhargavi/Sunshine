@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="10dp">
+    android:padding="14dp"
+    android:background="@drawable/touch_selector">
 
 
     <ImageView
@@ -17,20 +18,24 @@
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:layout_weight="7"
         android:orientation="vertical"
-        android:layout_marginLeft="10dp">
+        android:layout_marginLeft="14dp">
 
         <TextView
             android:id="@+id/day_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-condensed"
+            android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Tomorrow" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="Clear"
+            android:fontFamily="sans-serif-condensed"
             android:id="@+id/weathertype_text_view"
             android:layout_marginTop="5dp"/>
 
@@ -38,21 +43,25 @@
     </LinearLayout>
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_weight="5"
         android:layout_marginLeft="10dp">
 
         <TextView
             android:id="@+id/tempmax_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="21" />
 
         <TextView
             android:id="@+id/tempmin_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="8"
             android:layout_marginTop="5dp"/>
     </LinearLayout>
