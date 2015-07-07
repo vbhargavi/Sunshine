@@ -1,14 +1,18 @@
 package com.bhargavi.laxmi.sunshine;
 
+import android.app.Activity;
+import android.app.Fragment;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -22,6 +26,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.bhargavi.laxmi.sunshine.service.ServiceManager;
+import com.bhargavi.laxmi.sunshine.service.SunshineService;
 import com.bhargavi.laxmi.sunshine.service.data.WeatherResponse;
 
 import java.io.IOException;
@@ -35,11 +40,33 @@ import java.util.Date;
  * A placeholder fragment containing a simple view.
  */
 public class ForecastFragment extends Fragment {
-    private WeatherAdapter weatherAdapter ;
-    private ListView weatherListView ;
-    private String userLocation;
-    private  String unit ;
+    public static final String EXTRA_FORECAST_ARRAY = "forecastArray";
 
+    public static final String EXTRA_POSITION = "listViewPosition";
+
+    private WeatherAdapter weatherAdapter;
+    private ListView weatherListView;
+    private String userLocation;
+    private String unit;
+    private boolean isTablet;
+    private WeatherResponse.WeatherData[] mWeatherDataArray;
+    private int mSelectedPosition;
+
+    private ForceFragmentInterface mListener;
+
+    private SharedPreferences sharedPref;
+
+    private DataReceiver receiver;
+
+    public interface ForceFragmentInterface {
+        void onListItemClicked(WeatherResponse.WeatherData weatherData);
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mListener = (ForceFragmentInterface) activity;
+    }
 
     public ForecastFragment() {
     }
@@ -49,11 +76,11 @@ public class ForecastFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_main, container, false);
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
         unit = sharedPref.getString(getString(R.string.units_pref), "C");
 
         userLocation = sharedPref.getString(getString(R.string.location_pref_key), "95051");
-
+        isTablet = getResources().getBoolean(R.bool.tablet);
 
 
         weatherListView = (ListView) view.findViewById(R.id.listview_forecast);
@@ -61,24 +88,60 @@ public class ForecastFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 WeatherResponse.WeatherData weatherData = (WeatherResponse.WeatherData) weatherAdapter.getItem(position);
-                Intent intent = new Intent(getActivity(), DetailActivity.class);
-                intent.putExtra("forecast", weatherData);
-                startActivity(intent);
+                mListener.onListItemClicked(weatherData);
+                mSelectedPosition = position;
             }
         });
+
+        if (savedInstanceState != null) {
+            mWeatherDataArray = (WeatherResponse.WeatherData[]) savedInstanceState.getParcelableArray(EXTRA_FORECAST_ARRAY);
+            mSelectedPosition = savedInstanceState.getInt(EXTRA_POSITION);
+        }
 
         return view;
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        updateWeather();
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArray(EXTRA_FORECAST_ARRAY, mWeatherDataArray);
+        outState.putInt(EXTRA_POSITION, mSelectedPosition);
+        super.onSaveInstanceState(outState);
     }
 
-    private void updateWeather(){
-        FetchWeatherTask task = new FetchWeatherTask();
-        task.execute();
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        String location = sharedPref.getString(getString(R.string.location_pref_key), "95051");
+        if (mWeatherDataArray == null || !userLocation.equals(location)) {
+
+            if (receiver == null){
+                receiver = new DataReceiver();
+            }
+
+            IntentFilter filter = new IntentFilter(SunshineService.ACTION_DATA_LOADED);
+            LocalBroadcastManager.getInstance(getActivity()).registerReceiver(receiver,filter);
+            userLocation = location;
+            updateWeather();
+        } else {
+            finishLoading();
+        }
+    }
+
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if(receiver!= null){
+            LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(receiver);
+        }
+    }
+
+    private void updateWeather() {
+        Intent intent = new Intent(getActivity(), SunshineService.class);
+        intent.putExtra(SunshineService.EXTRA_USER_LOCATION,userLocation);
+        getActivity().startService(intent);
     }
 
     @Override
@@ -106,26 +169,23 @@ public class ForecastFragment extends Fragment {
         if (id == R.id.action_refresh) {
             updateWeather();
             return true;
-        }
-        else if (id == R.id.action_settings){
+        } else if (id == R.id.action_settings) {
 
-            Intent intent = new Intent(getActivity(),SettingsActivity.class);
+            Intent intent = new Intent(getActivity(), SettingsActivity.class);
             startActivity(intent);
 
             return true;
 
-        }
-        else if (id == R.id.action_map){
+        } else if (id == R.id.action_map) {
             Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + userLocation);
             Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
-            if (isPackageInstalled("com.google.android.apps.maps",getActivity())) {
+            if (isPackageInstalled("com.google.android.apps.maps", getActivity())) {
 
                 mapIntent.setPackage("com.google.android.apps.maps");
 
             }
             startActivity(mapIntent);
         }
-
 
 
         return super.onOptionsItemSelected(item);
@@ -141,33 +201,30 @@ public class ForecastFragment extends Fragment {
         }
     }
 
-    private class FetchWeatherTask extends AsyncTask<Void,Void,WeatherResponse.WeatherData[]> {
 
-         @Override
-         protected WeatherResponse.WeatherData[] doInBackground(Void... params) {
 
-             try {
+    private void finishLoading() {
+        weatherAdapter = new WeatherAdapter(getActivity(), mWeatherDataArray, unit, isTablet);
+        weatherListView.setAdapter(weatherAdapter);
+        weatherListView.setItemChecked(mSelectedPosition, true);
 
-                 WeatherResponse weatherResponse = ServiceManager.getWeatherResponse(userLocation);
-                 WeatherResponse.WeatherData[] weatherDataList = weatherResponse.getList();
+    }
 
-                 return weatherDataList;
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }
-             
+    private class DataReceiver extends BroadcastReceiver {
 
-             return null;
-         }
+        @Override
+        public void onReceive(Context context, Intent intent) {
 
-         @Override
-         protected void onPostExecute(WeatherResponse.WeatherData[] weatherResponse) {
-             super.onPostExecute(weatherResponse);
-             Log.d(getClass().getSimpleName(), weatherResponse.toString());
-
-             weatherAdapter = new WeatherAdapter(getActivity(),weatherResponse,unit);
-             weatherListView.setAdapter(weatherAdapter);
-
-         }
-     }
+            if ( intent.getAction().equals(SunshineService.ACTION_DATA_LOADED) && isAdded()) {
+                ArrayList<WeatherResponse.WeatherData> arrayList = intent.getParcelableArrayListExtra(EXTRA_FORECAST_ARRAY);
+                mWeatherDataArray =  arrayList.toArray(new WeatherResponse.WeatherData[arrayList.size()]);
+                if (mWeatherDataArray.length > 0 && isTablet) {
+                    mListener.onListItemClicked(mWeatherDataArray[0]);
+                }
+                finishLoading();
+            }
+        }
+    }
 }
+
+/**/

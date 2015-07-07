@@ -21,13 +21,16 @@ public class WeatherAdapter extends BaseAdapter {
     private LayoutInflater mInflater;
     private String mUnit;
     private boolean isMetric;
+    private boolean mIsTablet;
 
-    public WeatherAdapter(Context context, WeatherResponse.WeatherData[] weatherData, String unit) {
+    public WeatherAdapter(Context context, WeatherResponse.WeatherData[] weatherData, String unit, boolean isTablet) {
         mWeatherData = weatherData;
         mContext = context;
         mInflater = LayoutInflater.from(context);
         mUnit = unit;
         isMetric = mUnit.equals("C");
+        mIsTablet = isTablet;
+
     }
 
 
@@ -62,7 +65,7 @@ public class WeatherAdapter extends BaseAdapter {
         double max = temp.getMax();
         double min = temp.getMin();
         String maxTempString = Utility.formatTemperature(mContext, max, isMetric);
-        String minTempString = Utility.formatTemperature(mContext,min,isMetric);
+        String minTempString = Utility.formatTemperature(mContext, min, isMetric);
 
         if (!isMetric) {
             max = max * (9 / 5) + 32;
@@ -73,9 +76,9 @@ public class WeatherAdapter extends BaseAdapter {
         String date = Utility.getFriendlyDayString(mContext, data.getDt() * 1000);
         WeatherResponse.WeatherData.Weather weatherDescription = data.getWeather();
 
+        int weatherId = weatherDescription.getId();
 
-
-        if (position == 0) {
+        if (!mIsTablet && position == 0) {
             if (convertView == null || convertView.getTag() instanceof ViewHolder) {
                 convertView = mInflater.inflate(R.layout.list_first_item_forecast, parent, false);
                 firstViewHolder = new FirstViewHolder(convertView);
@@ -89,6 +92,9 @@ public class WeatherAdapter extends BaseAdapter {
             firstViewHolder.minTempTextView.setText(minTempString);
             firstViewHolder.dateTextView.setText(date);
             firstViewHolder.weatherConditionTextView.setText(weatherDescription.getMain());
+            int resourceId = Utility.getArtResourceForWeatherCondition(weatherId);
+            firstViewHolder.weatherImageView.setImageResource(resourceId);
+
 
         } else {
 
@@ -107,6 +113,8 @@ public class WeatherAdapter extends BaseAdapter {
             viewHolder.minTempTextView.setText(minTempString);
             viewHolder.dateTextView.setText(date);
             viewHolder.weatherConditionTextView.setText(weatherDescription.getMain());
+            int resourceId = Utility.getIconResourceForWeatherCondition(weatherId);
+            viewHolder.weatherImageView.setImageResource(resourceId);
 
         }
 

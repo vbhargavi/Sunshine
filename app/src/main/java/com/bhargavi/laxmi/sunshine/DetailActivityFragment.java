@@ -1,9 +1,9 @@
 package com.bhargavi.laxmi.sunshine;
 
+import android.app.Fragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.ShareActionProvider;
@@ -27,7 +27,8 @@ import java.util.Locale;
  * A placeholder fragment containing a simple view.
  */
 public class DetailActivityFragment extends Fragment {
-    private ShareActionProvider shareActionProvider ;
+    private static final String EXTRA_WEATHER = "weatherdata";
+    private ShareActionProvider shareActionProvider;
     private WeatherResponse.WeatherData mWeatherData;
 
     TextView dayTextView;
@@ -40,6 +41,13 @@ public class DetailActivityFragment extends Fragment {
     TextView weatherTextView;
     ImageView weatherImageView;
 
+    public static DetailActivityFragment newInstance(WeatherResponse.WeatherData weatherData) {
+        DetailActivityFragment fragment = new DetailActivityFragment();
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(EXTRA_WEATHER, weatherData);
+        fragment.setArguments(bundle);
+        return fragment;
+    }
 
 
     public DetailActivityFragment() {
@@ -48,8 +56,8 @@ public class DetailActivityFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_detail, container, false);
-       //TextView textView = (TextView) view.findViewById(R.id.detail_text_view);
+        View view = inflater.inflate(R.layout.detail_layout, container, false);
+        //TextView textView = (TextView) view.findViewById(R.id.detail_text_view);
 
         dayTextView = (TextView) view.findViewById(R.id.detail_text_view);
         dateTextView = (TextView) view.findViewById(R.id.date_text_view);
@@ -61,15 +69,34 @@ public class DetailActivityFragment extends Fragment {
         weatherImageView = (ImageView) view.findViewById(R.id.weatherimage_view);
         weatherTextView = (TextView) view.findViewById(R.id.weathertype_text_view);
 
-        Bundle bundle = getActivity().getIntent().getExtras();
+        Bundle bundle;
 
-         mWeatherData = bundle.getParcelable("forecast");
-        initData();
+        if(savedInstanceState != null) {
+           bundle = savedInstanceState;
+        } else {
+            bundle = getArguments();
+        }
+
+        if (bundle != null) {
+            mWeatherData = bundle.getParcelable(EXTRA_WEATHER);
+            initData();
+        }
         //textView.setText(forecast);
         return view;
     }
 
-    private void initData(){
+    public void updateData(WeatherResponse.WeatherData weatherData) {
+        mWeatherData = weatherData;
+        initData();
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable(EXTRA_WEATHER, mWeatherData);
+        super.onSaveInstanceState(outState);
+    }
+
+    private void initData() {
         int humidity = mWeatherData.getHumidity();
         double pressure = mWeatherData.getPressure();
         double speed = mWeatherData.getSpeed();
@@ -78,33 +105,32 @@ public class DetailActivityFragment extends Fragment {
         double max = temp.getMax();
         double min = temp.getMin();
         WeatherResponse.WeatherData.Weather weather = mWeatherData.getWeather();
+        int weatherId = weather.getId();
         String main = weather.getMain();
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
         boolean isMetric = sharedPref.getString(getString(R.string.units_pref), "C").equals("C");
 
         String maxTempString = Utility.formatTemperature(getActivity(), max, isMetric);
         String minTempString = Utility.formatTemperature(getActivity(), min, isMetric);
-        long milliSeconds = mWeatherData.getDt()*1000;
+        long milliSeconds = mWeatherData.getDt() * 1000;
 
         String day = Utility.getFriendlyDayString(getActivity(), milliSeconds);
         Date date = new Date(milliSeconds);
         SimpleDateFormat sdf = new SimpleDateFormat("MMMM d", Locale.US);
 
+        int resourcsId = Utility.getArtResourceForWeatherCondition(weatherId);
+        weatherImageView.setImageResource(resourcsId);
 
 
-        humidityTextView.setText("Humidity: " + humidity );
-        pressureTextView.setText("Pressure: " + pressure);;
+        humidityTextView.setText("Humidity: " + humidity);
+        pressureTextView.setText("Pressure: " + pressure);
+        ;
         windTextView.setText("Wind: " + speed);
         weatherTextView.setText(main);
         dayTextView.setText(day);
         maxTempTextView.setText(maxTempString);
         minTempTextView.setText(minTempString);
         dateTextView.setText(sdf.format(date));
-
-
-
-
-
 
 
     }
@@ -145,7 +171,7 @@ public class DetailActivityFragment extends Fragment {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Intent intent = new Intent(getActivity(),SettingsActivity.class);
+            Intent intent = new Intent(getActivity(), SettingsActivity.class);
             startActivity(intent);
 
             return true;

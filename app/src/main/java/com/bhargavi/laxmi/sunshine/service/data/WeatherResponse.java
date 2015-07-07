@@ -94,6 +94,10 @@ public class WeatherResponse {
             private int id;
             private  String icon;
 
+            public int getId() {
+                return id;
+            }
+
             public String getDescription() {
                 return description;
             }
