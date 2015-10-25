@@ -12,7 +12,7 @@ import java.io.IOException;
  * Created by laxmi on 6/25/15.
  */
 public class ServiceManager {
-    private static final String forecastUrl = "http://api.openweathermap.org/data/2.5/forecast/daily?mode=json&units=metric&cnt=7" ;
+    private static final String forecastUrl = "http://api.openweathermap.org/data/2.5/forecast/daily?mode=json&units=metric&cnt=7&APPID=3ec79ba67d7eb61af75dd573f9e96368" ;
   private static OkHttpClient client = new OkHttpClient();
 
     public static String makeCall(String url) throws IOException {
